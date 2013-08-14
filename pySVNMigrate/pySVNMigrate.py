@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 ################################################################################
 #
 # pySVNMigrate.py
@@ -24,9 +25,7 @@ def _swap_pairs_in_external(external):
 
 def modify_externals(repo, oldbase, newbase):
 	""" Takes a path to a repo and searches it for externals, changing any 
-	svn:externals found that contain oldbase into newbase.  
-	Also switches any svn:externals that are using the old SVN format 
-	where file and URL are swapped into using the new one. """
+	svn:externals found that contain oldbase into newbase """
 
 	#check out repo 
 	fixedrepo = re.sub('^file://', '', str(repo + "_fixed"))
@@ -50,6 +49,7 @@ def modify_externals(repo, oldbase, newbase):
 		#check format, swap URL / file positions if old bad format
 		if re.match('\A\S+ [./^]', myextdict[key]) or re.match('\A\S+ \S+://', myextdict[key]):
 			myextdict[key] = _swap_pairs_in_external(myextdict[key])
+
 		myextdict[key] = myextdict[key].replace(oldbase, newbase)
 		retval = subprocess.call(["svn", "propset", "svn:externals", myextdict[key], key])
 		if retval != 0:
@@ -57,6 +57,15 @@ def modify_externals(repo, oldbase, newbase):
 			return retval
 	return 0
 
+
+def svn_commit(working_repo):
+	#commit
+	retval = subprocess.call(["svn", "commit", working_repo])
+	if retval != 0:
+		print("svn commit failed :(")
+		return retval
+	return 0
+	
 
 if __name__ == "__main__":
 	modify_externals(sys.argv[1], sys.argv[2], sys.argv[3])
